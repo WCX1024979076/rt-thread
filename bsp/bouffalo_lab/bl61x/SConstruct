@@ -22,18 +22,37 @@ env['ASCOM'] = env['ASPPCOM']
 Export('RTT_ROOT')
 Export('rtconfig')
 
+<<<<<<<< HEAD:bsp/bouffalo_lab/bl61x/SConstruct
 SDK_ROOT = os.path.abspath('./')
 
 if os.path.exists(SDK_ROOT + '/libraries'):
     libraries_path_prefix = SDK_ROOT + '/libraries'
 else:
     libraries_path_prefix = os.path.dirname(SDK_ROOT) + '/libraries'
+========
+# add bl_mcu_sdk
+SDK_ROOT = os.path.abspath('../')
+
+if os.path.exists(SDK_ROOT + '/library/bl_mcu_sdk'):
+    libraries_path_prefix = SDK_ROOT + '/library/bl_mcu_sdk'
+else:
+    libraries_path_prefix = os.path.dirname(SDK_ROOT) + '/library/bl_mcu_sdk'
+
+SDK_LIB = libraries_path_prefix
+Export('SDK_LIB')
+>>>>>>>> 17dbcb771 (add bl_mcu_sdk & change uart, spi, gpio, lcd, pwm, rtc, wdt devices):bsp/bouffalo_lab/bl808/m0/SConstruct
 
 # prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu = False)
 
+<<<<<<<< HEAD:bsp/bouffalo_lab/bl61x/SConstruct
 # include libraries
 objs.extend(SConscript(libraries_path_prefix + '/bl_mcu_sdk/SConscript', variant_dir='build/libraries/bl_mcu_sdk', duplicate=0))
+========
+objs.extend(SConscript(os.path.join(libraries_path_prefix, 'SConscript')))
+
+stack_size = 4096
+>>>>>>>> 17dbcb771 (add bl_mcu_sdk & change uart, spi, gpio, lcd, pwm, rtc, wdt devices):bsp/bouffalo_lab/bl808/m0/SConstruct
 
 # include drivers
 objs.extend(SConscript(libraries_path_prefix + '/rt_drivers/SConscript', variant_dir='build/libraries/rt_drivers', duplicate=0))

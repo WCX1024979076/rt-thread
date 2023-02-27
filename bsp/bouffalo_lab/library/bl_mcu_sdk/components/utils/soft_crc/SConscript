@@ -1,0 +1,17 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+src = Split('''
+    soft_crc.c
+''')
+
+path = [cwd]
+
+libpath = []
+libs = []
+
+group = DefineGroup('Components_Crc', src, depend = [''], CPPPATH = path, LIBS = libs, LIBPATH = libpath)
+
+Return('group')

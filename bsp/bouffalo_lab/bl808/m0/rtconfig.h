@@ -16,7 +16,7 @@
 #define RT_HOOK_USING_FUNC_PTR
 #define RT_USING_IDLE_HOOK
 #define RT_IDLE_HOOK_LIST_SIZE 4
-#define IDLE_THREAD_STACK_SIZE 1024
+#define IDLE_THREAD_STACK_SIZE 4096
 #define RT_USING_TIMER_SOFT
 #define RT_TIMER_THREAD_PRIO 4
 #define RT_TIMER_THREAD_STACK_SIZE 512
@@ -37,7 +37,6 @@
 /* Memory Management */
 
 #define RT_PAGE_MAX_ORDER 11
-#define RT_USING_MEMPOOL
 #define RT_USING_SMALL_MEM
 #define RT_USING_SMALL_MEM_AS_HEAP
 #define RT_USING_HEAP
@@ -83,6 +82,11 @@
 #define RT_SERIAL_USING_DMA
 #define RT_SERIAL_RB_BUFSZ 64
 #define RT_USING_PIN
+#define RT_USING_PWM
+#define RT_USING_RTC
+#define RT_USING_SPI
+#define RT_USING_WDT
+#define RT_USING_LCD
 
 /* Using USB */
 
@@ -228,13 +232,26 @@
 #define BSP_USING_BL808
 #define BL808_CORE_M0
 
-/* General Drivers Configuration */
+#define SOC_BL808
+#define BSP_BL808
+#define BL808_M0
 
 
-/* General Purpose UARTs */
-
+#define BSP_USING_GPIO
+#define BSP_USING_LCD
+#define BSP_USING_SPI
+#define BSP_USING_SPI0
+#define BSP_USING_SPI1
+#define BSP_USING_PWM
+#define BSP_USING_PWM0
+#define BSP_USING_PWM1
+#define BSP_USING_PWM2
+#define BSP_USING_PWM3
+#define BSP_USING_UART
 #define BSP_USING_UART0
-#define UART0_TX_USING_GPIO14
-#define UART0_RX_USING_GPIO15
+#define BSP_UART0_TXD_PIN 14
+#define BSP_UART0_RXD_PIN 15
+#define BSP_USING_RTC
+#define BSP_USING_WDT
 
 #endif

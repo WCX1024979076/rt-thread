@@ -1,0 +1,55 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+src = Split('''
+    src/bl808_aon.c
+    src/bl808_clock.c
+    src/bl808_common.c
+    src/bl808_ef_cfg.c
+    src/bl808_glb.c
+    src/bl808_glb_gpio.c
+    src/bl808_hbn.c
+    src/bl808_l1c.c
+    src/bl808_pds.c
+    src/bl808_sdh.c
+''')
+
+src += Split('''
+    src/bl808_tzc_sec.c
+    src/bl808_psram_uhs.c
+    src/bl808_uhs_phy.c
+    port/bl808_clock.c
+''')
+
+if GetDepend('BL808_M0') :
+    src += Split('''
+        startup/m0/start.S
+        startup/m0/vector.S
+        startup/m0/riscv_fpu.S
+        startup/m0/start_load.c
+        startup/m0/system_bl808.c
+        startup/m0/interrupt.c
+    ''')
+else :
+    src += Split('''
+        startup/d0/start.S
+        startup/d0/vector.S
+        startup/d0/riscv_fpu.S
+        startup/d0/start_load.c
+        startup/d0/system_bl808.c
+        startup/d0/interrupt.c
+    ''')
+
+path = [
+    cwd + r'/include/hardware_bl',
+    cwd + r'/include'
+]
+
+libpath = []
+libs = []
+
+group = DefineGroup('Drivers_BL808_Std', src, depend = ['BSP_BL808'], CPPPATH = path, LIBS = libs, LIBPATH = libpath)
+
+Return('group')
