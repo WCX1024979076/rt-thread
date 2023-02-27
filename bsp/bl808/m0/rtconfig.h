@@ -36,6 +36,7 @@
 
 /* Memory Management */
 
+#define RT_PAGE_MAX_ORDER 11
 #define RT_USING_SMALL_MEM
 #define RT_USING_SMALL_MEM_AS_HEAP
 #define RT_USING_MEMTRACE
@@ -80,6 +81,8 @@
 #define RT_SERIAL_USING_DMA
 #define RT_SERIAL_RB_BUFSZ 64
 #define RT_USING_PIN
+#define RT_USING_SPI
+#define RT_USING_LCD
 
 /* Using USB */
 
@@ -224,10 +227,15 @@
 /* BL808_M0 Hardware Drivers Config */
 
 #define SOC_BL808
+#define BSP_BL808
+#define BL808_M0
 
 /* On-chip Peripheral Drivers */
 
 #define BSP_USING_GPIO
+#define BSP_USING_SPI
+#define BSP_USING_SPI0
+#define BSP_USING_SPI1
 #define BSP_USING_UART
 #define BSP_USING_UART0
 #define BSP_UART0_TXD_PIN 14

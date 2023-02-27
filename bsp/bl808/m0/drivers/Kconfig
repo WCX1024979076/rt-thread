@@ -11,11 +11,47 @@ config BSP_USING_JTAG_M0
     bool "Enable M0 JTAG "
     default n
 
+choice
+    prompt "Select bsp type"
+    default BSP_BL808
+    config BSP_BL602
+        bool "Using bl602"
+
+    config BSP_BL616
+        bool "Using bl616"
+
+    config BSP_BL702
+        bool "Using bl702"
+
+    config BSP_BL808
+        bool "Using bl808"
+endchoice
+
+if BSP_BL808
+    choice
+        prompt "Select bl808 cpu id"
+        default BL808_M0
+        config BL808_M0
+            bool "Using m0"
+
+        config BL808_D0
+            bool "Using d0"
+
+        config BL808_LP
+            bool "Using lp"
+    endchoice
+endif
+
 menu "On-chip Peripheral Drivers"
 
     config BSP_USING_GPIO
         bool "Enable GPIO"
         select RT_USING_PIN
+        default y
+
+    config BSP_USING_LCD
+        bool "Enable LCD"
+        select RT_USING_LCD
         default y
 
     menuconfig BSP_USING_I2C1
@@ -35,6 +71,20 @@ menu "On-chip Peripheral Drivers"
                 default 21
         endif
 
+    menuconfig BSP_USING_SPI
+        bool "Enable SPI"
+        default y
+        select RT_USING_SPI
+        if BSP_USING_SPI
+            config BSP_USING_SPI0
+                bool "Enable SPI0"
+                default y
+
+            config BSP_USING_SPI1
+                bool "Enable SPI1"
+                default y
+        endif
+    
     menuconfig BSP_USING_UART
         bool "Enable UART"
         default y

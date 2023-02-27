@@ -6,6 +6,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2023/01/5      chushicheng  first version
+ * 2023/02/27    wcx1024979076 use bl_mcu_sdk
  *
  */
 
@@ -14,7 +15,8 @@
 
 #include <board.h>
 #include <rtdevice.h>
-#include "drv_device.h"
+#include "bflb_gpio.h"
+#include "bflb_list.h"
 
 #define GPIO_OUTPUT_MODE                         0
 #define GPIO_OUTPUT_PP_MODE                      1

@@ -1,0 +1,19 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+src = Split('''
+    mem.c
+    mmheap/mmheap.c
+    mmheap/bflb_mmheap.c
+''')
+
+path = [cwd,cwd + '/mmheap' ]
+
+libpath = []
+libs = []
+
+group = DefineGroup('Components_Mem', src, depend = [''], CPPPATH = path, LIBS = libs, LIBPATH = libpath)
+
+Return('group')

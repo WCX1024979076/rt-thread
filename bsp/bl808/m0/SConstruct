@@ -22,8 +22,21 @@ env['ASCOM'] = env['ASPPCOM']
 Export('RTT_ROOT')
 Export('rtconfig')
 
+# add bl_mcu_sdk
+SDK_ROOT = os.path.abspath('../')
+
+if os.path.exists(SDK_ROOT + '/library/bl_mcu_sdk'):
+    libraries_path_prefix = SDK_ROOT + '/library/bl_mcu_sdk'
+else:
+    libraries_path_prefix = os.path.dirname(SDK_ROOT) + '/library/bl_mcu_sdk'
+
+SDK_LIB = libraries_path_prefix
+Export('SDK_LIB')
+
 # prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu = False)
+
+objs.extend(SConscript(os.path.join(libraries_path_prefix, 'SConscript')))
 
 stack_size = 4096
 

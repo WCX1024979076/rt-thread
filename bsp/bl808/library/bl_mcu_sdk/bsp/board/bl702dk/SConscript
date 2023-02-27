@@ -1,0 +1,18 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+src = Split('''
+    board.c
+''')
+
+path = [cwd]
+
+libpath = []
+
+libs = []
+
+group = DefineGroup('BL702dk_Board', src, depend = ['BSP_BL702'], CPPPATH = path, LIBS = libs, LIBPATH = libpath)
+
+Return('group')

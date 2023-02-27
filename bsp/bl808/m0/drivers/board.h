@@ -14,8 +14,7 @@
 #include <rtconfig.h>
 
 #include "core_rv32.h"
-#include "bl_sys.h"
-#include "bl_irq.h"
+#include "bflb_irq.h"
 #include "bl808_clock.h"
 
 #ifdef BL808
@@ -24,11 +23,11 @@
 #include "bl606p.h"
 #endif
 
-extern uint8_t _heap_start;
-extern uint8_t _heap_size;
+extern uint8_t __HeapBase;
+extern uint8_t __HeapLimit;
 
-#define RT_HW_HEAP_BEGIN    (void*)&_heap_start
-#define RT_HW_HEAP_END      (void*)(&_heap_start + (rt_ubase_t)&_heap_size)
+#define RT_HW_HEAP_BEGIN    (void*)&__HeapBase
+#define RT_HW_HEAP_END      (void*)&__HeapLimit
 
 void rt_hw_board_init(void);
 

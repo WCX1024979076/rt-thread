@@ -39,14 +39,20 @@ if PLATFORM == 'gcc':
     OBJDUMP = PREFIX + 'objdump'
     OBJCPY  = PREFIX + 'objcopy'
 
-    DEVICE  = ' -march=rv32imafcxthead -mabi=ilp32f -mtune=e907 -mcmodel=medany'
+    DEVICE  = ' -march=rv32imafcxthead -mabi=ilp32f -mtune=e907 -mcmodel=medany' #M0
+    # DEVICE  = ' -march=rv32imafcpzpsfoperand_xtheade -mabi=ilp32f -mtune=e907' #D0
+    # DEVICE  = ' -march=rv32emcxtheadse -mabi=ilp32e -mtune=e902'               #LP
+
     CFLAGS  = DEVICE + ' -Wall -Wno-error=unused-function -Wno-error=unused-but-set-variable -Wno-error=unused-variable -Wno-error=deprecated-declarations -Wextra -Wno-unused-parameter -Wno-sign-compare'
     CFLAGS += ' -Wno-old-style-declaration -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -fshort-enums -fcommon -ffreestanding -fno-strict-aliasing -fno-jump-tables -save-temps=obj'
 
-    LINKER_SCRIPTS_PATH = r'libraries/platform/soc/bl808/startup_bl808/evb/ld/'
-    LINKER_SCRIPTS = 'bl808_flash.ld'
+    LINKER_SCRIPTS_PATH = r'../library/bl_mcu_sdk/bsp/board/bl808dk/mcu/'
+    LINKER_SCRIPTS = 'bl808_flash_m0.ld'
 
-    CFLAGS += ' -DCFG_COMPONENT_BLOG_ENABLE=0 -DARCH_RISCV -DBFLB_USE_HAL_DRIVER -DCPU_M0 -DBL808'
+    # LINKER_SCRIPTS_PATH = r'libraries/platform/soc/bl808/startup_bl808/evb/ld/'
+    # LINKER_SCRIPTS = 'bl808_flash.ld'
+    
+    CFLAGS += ' -DCFG_COMPONENT_BLOG_ENABLE=0 -DARCH_RISCV -DBFLB_USE_HAL_DRIVER -DCPU_M0 -DBL808  -DCONFIG_IRQ_NUM=80'
 
     AFLAGS  = ' -c' + DEVICE + ' -x assembler-with-cpp'
     LFLAGS  = DEVICE + ' -nostartfiles -Wl,--gc-sections,-Map=rtthread.map,-cref,-u,_start -T ' + LINKER_SCRIPTS_PATH + LINKER_SCRIPTS
