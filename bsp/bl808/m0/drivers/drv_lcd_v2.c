@@ -1,46 +1,46 @@
 /*
- * Copyright (c) 2006-2023, RT-Thread Development Team
+ * Copyright (c) 2006-2018, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
  * Date           Author            Notes
- * 2023-2-24    wcx1024979076      first version
+ * 2018-08-14    flybreak           the first version
+ * 2018-09-18    balanceTWK         add sleep mode function
+ * 2018-09-27    ZYLX               optimized display speed
  */
 
 #include <rtdevice.h>
-#include <drv_gpio.h>
-#include <drv_spi.h>
+#include "drv_spi.h"
 #include "drv_lcd.h"
-#include "bflb_pwm_v2.h"
-#include "bflb_clock.h"
-#ifndef BSP_USING_LVGL
 #include "drv_lcd_font.h"
-#endif /* BSP_USING_LVGL */
+#include "drv_gpio.h"
 
-#define DBG_TAG    "drv.lcd"
-#define DBG_LVL    DBG_INFO
+#define DBG_SECTION_NAME    "LCD"
+#define DBG_COLOR
+#define DBG_LEVEL           DBG_LOG
 #include <rtdbg.h>
 
+#define LCD_PWR_PIN           GPIO_PIN_11
 #define LCD_DC_PIN            GPIO_PIN_13
 #define LCD_RES_PIN           GPIO_PIN_24
+#define LCD_CLEAR_SEND_NUMBER 5760
 
-#ifndef BSP_USING_LVGL
-#define LCD_CLEAR_SEND_NUMBER 6720 /* 240*280/10 */
 rt_uint16_t BACK_COLOR = WHITE, FORE_COLOR = BLACK;
-#endif /* BSP_USING_LVGL */
 
 static struct rt_spi_device *spi_dev_lcd;
 
 static int rt_hw_lcd_config(void)
 {
     spi_dev_lcd = (struct rt_spi_device *)rt_device_find("spi10");
+
     /* config spi */
     {
-        struct rt_spi_configuration cfg = {0};
+        struct rt_spi_configuration cfg;
         cfg.data_width = 8;
         cfg.mode = RT_SPI_MASTER | RT_SPI_MODE_0 | RT_SPI_MSB;
         cfg.max_hz = 40 * 1000 * 1000; /* 40M,SPI max 40MHz,lcd 4-wire spi */
+
         rt_spi_configure(spi_dev_lcd, &cfg);
     }
 
@@ -57,7 +57,7 @@ static rt_err_t lcd_write_cmd(const rt_uint8_t cmd)
 
     if (len != 1)
     {
-        printf("lcd_write_cmd error. %d", len);
+        LOG_I("lcd_write_cmd error. %d", len);
         return -RT_ERROR;
     }
     else
@@ -76,7 +76,7 @@ static rt_err_t lcd_write_data(const rt_uint8_t data)
 
     if (len != 1)
     {
-        printf("lcd_write_data error. %d", len);
+        LOG_I("lcd_write_data error. %d", len);
         return -RT_ERROR;
     }
     else
@@ -85,7 +85,6 @@ static rt_err_t lcd_write_data(const rt_uint8_t data)
     }
 }
 
-#ifndef BSP_USING_LVGL
 static rt_err_t lcd_write_half_word(const rt_uint16_t da)
 {
     rt_size_t len;
@@ -98,7 +97,7 @@ static rt_err_t lcd_write_half_word(const rt_uint16_t da)
     len = rt_spi_send(spi_dev_lcd, data, 2);
     if (len != 2)
     {
-        printf("lcd_write_half_word error. %d", len);
+        LOG_I("lcd_write_half_word error. %d", len);
         return -RT_ERROR;
     }
     else
@@ -106,7 +105,6 @@ static rt_err_t lcd_write_half_word(const rt_uint16_t da)
         return RT_EOK;
     }
 }
-#endif /* BSP_USING_LVGL */
 
 static void lcd_gpio_init(void)
 {
@@ -115,19 +113,20 @@ static void lcd_gpio_init(void)
     rt_pin_mode(LCD_DC_PIN, PIN_MODE_OUTPUT);
     rt_pin_mode(LCD_RES_PIN, PIN_MODE_OUTPUT);
 
-    rt_pin_write(LCD_RES_PIN, PIN_LOW);
+    rt_pin_mode(LCD_PWR_PIN, PIN_MODE_OUTPUT);
+    rt_pin_write(LCD_PWR_PIN, PIN_LOW);
 
+    rt_pin_write(LCD_RES_PIN, PIN_LOW);
     //wait at least 100ms for reset
     rt_thread_delay(RT_TICK_PER_SECOND / 10);
     rt_pin_write(LCD_RES_PIN, PIN_HIGH);
 }
 
-int rt_hw_lcd_init(void)
+static int rt_hw_lcd_init(void)
 {
     // __HAL_RCC_GPIOD_CLK_ENABLE();
-    rt_hw_spi_device_attach("spi1", "spi10", GPIO_PIN_12); // ST7789V_SPI_CS_PIN
+    rt_hw_spi_device_attach("spi1", "spi10", GPIO_PIN_12);
     lcd_gpio_init();
-
     /* Memory Data Access Control */
     lcd_write_cmd(0x36);
     lcd_write_data(0x00);
@@ -205,15 +204,16 @@ int rt_hw_lcd_init(void)
     /* wait for power stability */
     rt_thread_mdelay(100);
 
+    lcd_clear(WHITE);
+
     /* display on */
-    lcd_display_on();
+    rt_pin_write(LCD_PWR_PIN, PIN_HIGH);
     lcd_write_cmd(0x29);
-    printf("lcd init end\n");
+
     return RT_EOK;
 }
 INIT_DEVICE_EXPORT(rt_hw_lcd_init);
 
-#ifndef BSP_USING_LVGL
 /**
  * Set background color and foreground color
  *
@@ -227,61 +227,28 @@ void lcd_set_color(rt_uint16_t back, rt_uint16_t fore)
     BACK_COLOR = back;
     FORE_COLOR = fore;
 }
-#endif /* BSP_USING_LVGL */
-
-void lcd_display_brightness(rt_uint8_t percent)
-{
-    struct rt_device_pwm *pwm_dev;
-
-    if(percent > 100)
-    {
-        percent = 100;
-    }
-
-    struct bflb_device_s *pwm;
-    struct bflb_device_s *gpio;
-    gpio = bflb_device_get_by_name("gpio");
-    pwm = bflb_device_get_by_name("pwm_v2_0");
-    struct bflb_pwm_v2_config_s cfg = {
-        .clk_source = BFLB_SYSTEM_XCLK,
-        .clk_div = 40,
-        .period = 1000,
-    };
-
-    bflb_gpio_init(gpio, GPIO_PIN_11, GPIO_FUNC_PWM0 | GPIO_ALTERNATE | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_1);
-    bflb_pwm_v2_init(pwm, &cfg);
-    bflb_pwm_v2_channel_set_threshold(pwm, PWM_CH0, 100, 500); /* duty = (500-100)/1000 = 40% */
-    bflb_pwm_v2_channel_positive_start(pwm, PWM_CH0);
-    bflb_pwm_v2_start(pwm);
-    // pwm_dev = (struct rt_device_pwm*)rt_device_find("pwm4");
-    // if(pwm_dev != RT_NULL)
-    // {
-    //     rt_pwm_set(pwm_dev, 2, 1000000, percent*10000); /* PB7, PWM4 CH2 with 1000Hz */
-    //     rt_pwm_enable(pwm_dev, 2);
-    // }
-}
 
 void lcd_display_on(void)
 {
-    lcd_display_brightness(100);
+    rt_pin_write(LCD_PWR_PIN, PIN_HIGH);
 }
 
 void lcd_display_off(void)
 {
-    lcd_display_brightness(0);
+    rt_pin_write(LCD_PWR_PIN, PIN_LOW);
 }
 
 /* lcd enter the minimum power consumption mode and backlight off. */
 void lcd_enter_sleep(void)
 {
-    lcd_display_off();
+    rt_pin_write(LCD_PWR_PIN, PIN_LOW);
     rt_thread_mdelay(5);
     lcd_write_cmd(0x10);
 }
 /* lcd turn off sleep mode and backlight on. */
 void lcd_exit_sleep(void)
 {
-    lcd_display_on();
+    rt_pin_write(LCD_PWR_PIN, PIN_HIGH);
     rt_thread_mdelay(5);
     lcd_write_cmd(0x11);
     rt_thread_mdelay(120);
@@ -314,7 +281,6 @@ void lcd_address_set(rt_uint16_t x1, rt_uint16_t y1, rt_uint16_t x2, rt_uint16_t
     lcd_write_cmd(0x2C);
 }
 
-#ifndef BSP_USING_LVGL
 /**
  * clear the lcd.
  *
@@ -332,6 +298,7 @@ void lcd_clear(rt_uint16_t color)
     data[1] = color;
     lcd_address_set(0, 0, LCD_W - 1, LCD_H - 1);
 
+    /* 5760 = 240*240/20 */
     buf = rt_malloc(LCD_CLEAR_SEND_NUMBER);
     if (buf)
     {
@@ -408,7 +375,7 @@ void lcd_fill(rt_uint16_t x_start, rt_uint16_t y_start, rt_uint16_t x_end, rt_ui
     rt_uint32_t size = 0, size_remain = 0;
     rt_uint8_t *fill_buf = RT_NULL;
 
-    size = (x_end - x_start + 1) * (y_end - y_start + 1) * 2;
+    size = (x_end - x_start) * (y_end - y_start) * 2;
 
     if (size > LCD_CLEAR_SEND_NUMBER)
     {
@@ -458,31 +425,7 @@ void lcd_fill(rt_uint16_t x_start, rt_uint16_t y_start, rt_uint16_t x_end, rt_ui
         }
     }
 }
-#endif /* BSP_USING_LVGL */
 
-
-/**
- * full color array on the lcd.
- *
- * @param   x_start     start of x position
- * @param   y_start     start of y position
- * @param   x_end       end of x position
- * @param   y_end       end of y position
- * @param   color       Fill color array's pointer
- *
- * @return  void
- */
-void lcd_fill_array(rt_uint16_t x_start, rt_uint16_t y_start, rt_uint16_t x_end, rt_uint16_t y_end, void *pcolor)
-{
-    rt_uint32_t size = 0;
-
-    size = (x_end - x_start + 1) * (y_end - y_start + 1) * 2/*16bit*/;
-    lcd_address_set(x_start, y_start, x_end, y_end);
-    rt_pin_write(LCD_DC_PIN, PIN_HIGH);
-    rt_spi_send(spi_dev_lcd, pcolor, size);
-}
-
-#ifndef BSP_USING_LVGL
 /**
  * display a line on the lcd.
  *
@@ -503,33 +446,18 @@ void lcd_draw_line(rt_uint16_t x1, rt_uint16_t y1, rt_uint16_t x2, rt_uint16_t y
     if (y1 == y2)
     {
         /* fast draw transverse line */
-        rt_uint32_t x_offset = 0;
-        if (x1 < x2)
-        {
-            x_offset = x2 - x1;
-            lcd_address_set(x1, y1, x2, y2);
-        }
-        else if (x1 > x2)
-        {
-            x_offset = x1 - x2;
-            lcd_address_set(x2, y2, x1, y1);
-        }
-        else
-        {
-            lcd_draw_point(x1, y1);
-            return;
-        }
+        lcd_address_set(x1, y1, x2, y2);
 
         rt_uint8_t line_buf[480] = {0};
 
-        for (i = 0; i < x_offset; i++)
+        for (i = 0; i < x2 - x1; i++)
         {
             line_buf[2 * i] = FORE_COLOR >> 8;
             line_buf[2 * i + 1] = FORE_COLOR;
         }
 
         rt_pin_write(LCD_DC_PIN, PIN_HIGH);
-        rt_spi_send(spi_dev_lcd, line_buf, x_offset * 2);
+        rt_spi_send(spi_dev_lcd, line_buf, (x2 - x1) * 2);
 
         return ;
     }
@@ -894,4 +822,175 @@ rt_err_t lcd_show_image(rt_uint16_t x, rt_uint16_t y, rt_uint16_t length, rt_uin
     return RT_EOK;
 }
 
-#endif /* BSP_USING_LVGL */
+#ifdef PKG_USING_QRCODE
+QRCode qrcode;
+
+static rt_uint8_t get_enlargement_factor(rt_uint16_t x, rt_uint16_t y, rt_uint8_t size)
+{
+    rt_uint8_t enlargement_factor = 1 ;
+
+    if (x + size * 8 <= LCD_W && y + size * 8 <= LCD_H)
+    {
+        enlargement_factor = 8;
+    }
+    else if (x + size * 4 <= LCD_W &&y + size * 4 <= LCD_H)
+    {
+        enlargement_factor = 4;
+    }
+    else if (x + size * 2 <= LCD_W && y + size * 2 <= LCD_H)
+    {
+        enlargement_factor = 2;
+    }
+
+    return enlargement_factor;
+}
+
+static void show_qrcode_by_point(rt_uint16_t x, rt_uint16_t y, rt_uint8_t size, rt_uint8_t enlargement_factor)
+{
+    rt_uint32_t width = 0, high = 0;
+    for (high = 0; high < size; high++)
+    {
+        for (width = 0; width < size; width++)
+        {
+            if (qrcode_getModule(&qrcode, width, high))
+            {
+                /* magnify pixel */
+                for (rt_uint32_t offset_y = 0; offset_y < enlargement_factor; offset_y++)
+                {
+                    for (rt_uint32_t offset_x = 0; offset_x < enlargement_factor; offset_x++)
+                    {
+                        lcd_draw_point(x + enlargement_factor * width + offset_x, y + enlargement_factor * high + offset_y);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void show_qrcode_by_line(rt_uint16_t x, rt_uint16_t y, rt_uint8_t size, rt_uint8_t enlargement_factor,rt_uint8_t *qrcode_buf)
+{
+    rt_uint32_t width = 0, high = 0;
+    for (high = 0; high < qrcode.size; high++)
+    {
+        for (width = 0; width < qrcode.size; width++)
+        {
+            if (qrcode_getModule(&qrcode, width, high))
+            {
+                /* magnify pixel */
+                for (rt_uint32_t offset_y = 0; offset_y < enlargement_factor; offset_y++)
+                {
+                    for (rt_uint32_t offset_x = 0; offset_x < enlargement_factor; offset_x++)
+                    {
+                        /* save the information of modules */
+                        qrcode_buf[2 * (enlargement_factor * width + offset_x + offset_y * qrcode.size * enlargement_factor)] = FORE_COLOR >> 8;
+                        qrcode_buf[2 * (enlargement_factor * width + offset_x + offset_y * qrcode.size * enlargement_factor) + 1] = FORE_COLOR;
+                    }
+                }
+            }
+            else
+            {
+                /* magnify pixel */
+                for (rt_uint32_t offset_y = 0; offset_y < enlargement_factor; offset_y++)
+                {
+                    for (rt_uint32_t offset_x = 0; offset_x < enlargement_factor; offset_x++)
+                    {
+                        /* save the information of blank */
+                        qrcode_buf[2 * (enlargement_factor * width + offset_x + offset_y * qrcode.size * enlargement_factor)] = BACK_COLOR >> 8;
+                        qrcode_buf[2 * (enlargement_factor * width + offset_x + offset_y * qrcode.size * enlargement_factor) + 1] = BACK_COLOR;
+                    }
+                }
+            }
+        }
+        /* display a line of qrcode */
+        lcd_show_image(x, y + high * enlargement_factor, qrcode.size * enlargement_factor, enlargement_factor, qrcode_buf);
+    }
+}
+
+/**
+ * display the qrcode on the lcd.
+ * size = (4 * version +17) * enlargement
+ *
+ * @param   x           x position
+ * @param   y           y position
+ * @param   version     version of qrcode
+ * @param   ecc         level of error correction
+ * @param   data        string
+ * @param   enlargement enlargement_factor
+ *
+ * @return   0: display success
+ *          -1: generate qrcode failed
+*           -5: memory low
+ */
+rt_err_t lcd_show_qrcode(rt_uint16_t x, rt_uint16_t y, rt_uint8_t version, rt_uint8_t ecc, const char *data, rt_uint8_t enlargement)
+{
+    RT_ASSERT(data);
+
+    rt_int8_t result = 0;
+    rt_uint8_t enlargement_factor = 1;
+    rt_uint8_t *qrcode_buf = RT_NULL;
+
+    if (x + version * 4 + 17 > LCD_W || y + version * 4 + 17 > LCD_H)
+    {
+        LOG_E("The qrcode is too big!");
+        return -RT_ERROR;
+    }
+
+    rt_uint8_t *qrcodeBytes = (rt_uint8_t *)rt_calloc(1, qrcode_getBufferSize(version));
+    if (qrcodeBytes == RT_NULL)
+    {
+        LOG_E("no memory for qrcode!");
+        return -RT_ENOMEM;
+    }
+
+    /* generate qrcode */
+    result = qrcode_initText(&qrcode, qrcodeBytes, version, ecc, data);
+    if (result >= 0)
+    {
+        /* set enlargement factor */
+        if(enlargement == 0)
+        {
+            enlargement_factor = get_enlargement_factor(x, y, qrcode.size);
+        }
+        else
+        {
+            enlargement_factor = enlargement;
+        }
+        
+        /* malloc memory for quick display of qrcode */
+        qrcode_buf = rt_malloc(qrcode.size * 2 * enlargement_factor * enlargement_factor);
+        if (qrcode_buf == RT_NULL)
+        {
+            /* clear lcd */
+            lcd_fill(x, y, x + qrcode.size, y + qrcode.size, BACK_COLOR);
+
+            /* draw point to display qrcode */
+            show_qrcode_by_point(x, y, qrcode.size, enlargement_factor);
+        }
+        else
+        {
+            /* quick display of qrcode */
+            show_qrcode_by_line(x, y, qrcode.size, enlargement_factor,qrcode_buf);
+        }
+        result = RT_EOK;
+    }
+    else
+    {
+        LOG_E("QRCODE(%s) generate falied(%d)\n", data, result);
+        result = -RT_ENOMEM;
+        goto __exit;
+    }
+
+__exit:
+    if (qrcodeBytes)
+    {
+        rt_free(qrcodeBytes);
+    }
+
+    if (qrcode_buf)
+    {
+        rt_free(qrcode_buf);
+    }
+
+    return result;
+}
+#endif

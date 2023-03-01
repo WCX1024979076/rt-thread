@@ -98,6 +98,11 @@ static rt_err_t spi_configure(struct rt_spi_device *device,
     else
         spi_cfg.bit_order = SPI_BIT_LSB;
 
+    if(configuration->mode & RT_SPI_MASTER)
+        spi_cfg.role = SPI_ROLE_MASTER;
+    else
+        spi_cfg.role = SPI_ROLE_SLAVE;
+
     struct bflb_device_s *spi;
     struct mcu_drv_spi_config *mcu_spi_config;
 
@@ -122,10 +127,11 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
     tmp_spi = rt_container_of(device->bus, struct mcu_drv_spi, spi_bus);
     mcu_spi_config = tmp_spi->spi_bus.parent.user_data;
     spi = bflb_device_get_by_name(mcu_spi_config->bus_name);
-
-    bflb_gpio_reset(gpio, cs_pin);
+    if(message->cs_take)
+        bflb_gpio_reset(gpio, cs_pin);
     bflb_spi_poll_exchange(spi, (void *)message->send_buf, (void *)message->recv_buf,  message->length);
-    bflb_gpio_set(gpio, cs_pin);
+    if(message->cs_release)
+        bflb_gpio_set(gpio, cs_pin);
     return message->length;
 }
 
@@ -183,7 +189,7 @@ rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, 
     if(strcmp(bus_name, "spi1") == 0)
     {
         /* spi cs */
-        bflb_gpio_init(gpio, cs_pin,      GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        bflb_gpio_init(gpio, cs_pin,      GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
         /* spi miso */
         bflb_gpio_init(gpio, GPIO_PIN_26, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
         /* spi mosi */
@@ -191,7 +197,17 @@ rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, 
         /* spi clk */
         bflb_gpio_init(gpio, GPIO_PIN_19, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
     }
-
+    else
+    {
+        /* spi cs */
+        bflb_gpio_init(gpio, cs_pin,     GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        /* spi miso */
+        bflb_gpio_init(gpio, GPIO_PIN_1, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        /* spi mosi */
+        bflb_gpio_init(gpio, GPIO_PIN_2, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        /* spi clk */
+        bflb_gpio_init(gpio, GPIO_PIN_3, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+    }
     RT_ASSERT(result == RT_EOK);
     return result;
 }
