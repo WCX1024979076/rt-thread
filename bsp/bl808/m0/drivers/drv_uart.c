@@ -273,7 +273,7 @@ static rt_err_t _uart_configure(struct rt_serial_device *serial, struct serial_c
     bflb_uart = bflb_device_get_by_name(uart->name);
 
     bflb_uart_init(bflb_uart, &uart_cfg);
-    
+
     return RT_EOK;
 }
 
@@ -333,7 +333,7 @@ int _bl_uart_int_disable(uint8_t id)
 int _bl_uart_int_enable(uint8_t id)
 {
     struct bflb_device_s *uart;
-    
+
     switch (id) {
         case 0:
         {

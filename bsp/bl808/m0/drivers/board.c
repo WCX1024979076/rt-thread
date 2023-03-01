@@ -46,7 +46,7 @@ void rt_hw_board_init(void)
     rt_hw_i2c_init();
 #endif
 
-    /* SPI driver initialization is open by default */ 
+    /* SPI driver initialization is open by default */
 #ifdef RT_USING_SPI
     rt_hw_spi_init();
 #endif

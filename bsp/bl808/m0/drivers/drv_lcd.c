@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2023, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -26,7 +26,7 @@
 #define LCD_RES_PIN           GPIO_PIN_24
 
 #ifndef BSP_USING_LVGL
-#define LCD_CLEAR_SEND_NUMBER 6720 /* 240*240/10 */
+#define LCD_CLEAR_SEND_NUMBER 6720 /* 240*280/10 */
 rt_uint16_t BACK_COLOR = WHITE, FORE_COLOR = BLACK;
 #endif /* BSP_USING_LVGL */
 
@@ -239,14 +239,16 @@ void lcd_display_brightness(rt_uint8_t percent)
     }
 
     struct bflb_device_s *pwm;
+    struct bflb_device_s *gpio;
+    gpio = bflb_device_get_by_name("gpio");
     pwm = bflb_device_get_by_name("pwm_v2_0");
-
     struct bflb_pwm_v2_config_s cfg = {
         .clk_source = BFLB_SYSTEM_XCLK,
         .clk_div = 40,
         .period = 1000,
     };
 
+    bflb_gpio_init(gpio, GPIO_PIN_11, GPIO_FUNC_PWM0 | GPIO_ALTERNATE | GPIO_PULLDOWN | GPIO_SMT_EN | GPIO_DRV_1);
     bflb_pwm_v2_init(pwm, &cfg);
     bflb_pwm_v2_channel_set_threshold(pwm, PWM_CH0, 100, 500); /* duty = (500-100)/1000 = 40% */
     bflb_pwm_v2_channel_positive_start(pwm, PWM_CH0);

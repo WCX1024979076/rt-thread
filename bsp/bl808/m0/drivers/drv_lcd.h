@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2023, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -13,8 +13,8 @@
 
 #include <rtthread.h>
 
-#define LCD_W 240 
-#define LCD_H 280 
+#define LCD_W 240
+#define LCD_H 280
 
 #ifndef BSP_USING_LVGL
 #define WHITE            0xFFFF

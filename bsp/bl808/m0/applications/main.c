@@ -15,5 +15,9 @@
 int main(void)
 {
     rt_kprintf("Hello, world\n");
+#ifdef BSP_USING_LCD
+    lcd_show_num(0, 0, 1, 1, 32);
+    lcd_fill(0, 0, 240, 240, RED);
+#endif
     return 0;
 }

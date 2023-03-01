@@ -41,6 +41,7 @@ static rt_err_t spi_configure(struct rt_spi_device *device,
     RT_ASSERT(configuration != RT_NULL);
     struct mcu_drv_spi *tmp_spi;
     tmp_spi = rt_container_of(device->bus, struct mcu_drv_spi, spi_bus);
+
     struct bflb_spi_config_s spi_cfg = {
         .freq = 1 * 1000 * 1000,
         .role = SPI_ROLE_MASTER,
@@ -51,7 +52,6 @@ static rt_err_t spi_configure(struct rt_spi_device *device,
         .tx_fifo_threshold = 0,
         .rx_fifo_threshold = 0,
     };
-
 
     switch (configuration->mode & RT_SPI_MODE_3)
     {
@@ -92,13 +92,19 @@ static rt_err_t spi_configure(struct rt_spi_device *device,
     }
 
     spi_cfg.freq = configuration->max_hz;
+
+    if(configuration->mode & RT_SPI_MSB)
+        spi_cfg.bit_order = SPI_BIT_MSB;
+    else
+        spi_cfg.bit_order = SPI_BIT_LSB;
+
     struct bflb_device_s *spi;
     struct mcu_drv_spi_config *mcu_spi_config;
+
     mcu_spi_config = tmp_spi->spi_bus.parent.user_data;
     spi = bflb_device_get_by_name(mcu_spi_config->bus_name);
     bflb_spi_init(spi, &spi_cfg);
 
-    //init finish 
     return RT_EOK;
 }
 
@@ -111,10 +117,12 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
     struct bflb_device_s* gpio = bflb_device_get_by_name("gpio");
     struct mcu_drv_spi *tmp_spi;
     struct bflb_device_s *spi;
-    tmp_spi = rt_container_of(device->bus, struct mcu_drv_spi, spi_bus);
     struct mcu_drv_spi_config *mcu_spi_config;
+
+    tmp_spi = rt_container_of(device->bus, struct mcu_drv_spi, spi_bus);
     mcu_spi_config = tmp_spi->spi_bus.parent.user_data;
     spi = bflb_device_get_by_name(mcu_spi_config->bus_name);
+
     bflb_gpio_reset(gpio, cs_pin);
     bflb_spi_poll_exchange(spi, (void *)message->send_buf, (void *)message->recv_buf,  message->length);
     bflb_gpio_set(gpio, cs_pin);
@@ -172,7 +180,18 @@ rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, 
     /* SET THE GPIO */
     struct bflb_device_s *gpio;
     gpio = bflb_device_get_by_name("gpio");
-    bflb_gpio_init(gpio, cs_pin, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+    if(strcmp(bus_name, "spi1") == 0)
+    {
+        /* spi cs */
+        bflb_gpio_init(gpio, cs_pin,      GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        /* spi miso */
+        bflb_gpio_init(gpio, GPIO_PIN_26, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        /* spi mosi */
+        bflb_gpio_init(gpio, GPIO_PIN_25, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        /* spi clk */
+        bflb_gpio_init(gpio, GPIO_PIN_19, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+    }
+
     RT_ASSERT(result == RT_EOK);
     return result;
 }

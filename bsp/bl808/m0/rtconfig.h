@@ -233,6 +233,7 @@
 /* On-chip Peripheral Drivers */
 
 #define BSP_USING_GPIO
+#define BSP_USING_LCD
 #define BSP_USING_SPI
 #define BSP_USING_SPI0
 #define BSP_USING_SPI1

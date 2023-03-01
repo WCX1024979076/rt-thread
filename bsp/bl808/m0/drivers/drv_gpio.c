@@ -55,7 +55,7 @@ static void bl808_pin_mode(rt_device_t dev, rt_base_t pin, rt_base_t mode)
     struct bflb_device_s* gpio;
     gpio = bflb_device_get_by_name("gpio");
     uint32_t gpio_cfg;
-    
+
     gpio_cfg |= GPIO_DRV_0;
     gpio_cfg |= GPIO_SMT_EN;
 
@@ -63,7 +63,7 @@ static void bl808_pin_mode(rt_device_t dev, rt_base_t pin, rt_base_t mode)
     {
         case GPIO_OUTPUT_MODE:
             gpio_cfg |= GPIO_OUTPUT;
-            gpio_cfg |=  GPIO_FLOAT;
+            gpio_cfg |= GPIO_FLOAT;
             break;
 
         case GPIO_OUTPUT_PP_MODE:
