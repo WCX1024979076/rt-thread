@@ -109,6 +109,7 @@ static rt_err_t spi_configure(struct rt_spi_device *device,
     mcu_spi_config = tmp_spi->spi_bus.parent.user_data;
     spi = bflb_device_get_by_name(mcu_spi_config->bus_name);
     bflb_spi_init(spi, &spi_cfg);
+    LOG_D("%s config end", mcu_spi_config->bus_name);
 
     return RT_EOK;
 }
