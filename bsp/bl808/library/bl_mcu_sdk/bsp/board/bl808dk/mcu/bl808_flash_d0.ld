@@ -17,7 +17,7 @@ INPUT(-lgcc)
 /* configure the entry point */
 ENTRY(__start)
 
-StackSize    = 0x0400; /*  1KB */
+StackSize    = 0x1000; /*  1KB */
 HeapMinSize  = 0x1000; /*  4KB */
 
 MEMORY
@@ -28,6 +28,7 @@ MEMORY
     dtcm_memory (rx)  : ORIGIN = 0x3eff7000, LENGTH = 4K
     nocache_ram_memory (!rx) : ORIGIN = 0x3eff8000, LENGTH = 0K
     ram_memory  (!rx) : ORIGIN = 0x3eff8000, LENGTH = 32K + 32K
+    psram_memory (!rx) : ORIGIN = 0x50040000, LENGTH = 256k
     xram_memory (!rx) : ORIGIN = 0x40004000, LENGTH = 16K
 }
 
@@ -44,6 +45,7 @@ SECTIONS
         __text_code_start__ = .;
 
         KEEP (*(SORT_NONE(.init)))
+        KEEP (*(SORT_NONE(.vector)))
 
         *(.text)
         *(.text.*)
@@ -77,6 +79,17 @@ SECTIONS
 
         *(.srodata)
         *(.srodata.*)
+
+        /* section information for modules */
+        . = ALIGN(4);
+        __rtmsymtab_start = .;
+        KEEP(*(RTMSymTab))
+        __rtmsymtab_end = .;
+
+        . = ALIGN(4);
+        __rt_init_start = .;
+        KEEP(*(SORT(.rti_fn*)))
+        __rt_init_end = .;
 
         . = ALIGN(4);
         __text_code_end__ = .;
@@ -143,6 +156,7 @@ SECTIONS
      * size of stack_dummy section */
     __StackTop = ORIGIN(dtcm_memory) + LENGTH(dtcm_memory);
     PROVIDE( __freertos_irq_stack_top = __StackTop);
+    PROVIDE( __rt_rvstack = __StackTop);
     __StackLimit = __StackTop - SIZEOF(.stack_dummy);
 
     /* Check if data + heap + stack exceeds RAM limit */
@@ -256,9 +270,9 @@ SECTIONS
 
         . = ALIGN(4);
         __HeapLimit = .;
-    } > ram_memory
+    } > psram_memory
 
-    __HeapLimit = ORIGIN(ram_memory) + LENGTH(ram_memory);
+    __HeapLimit = ORIGIN(psram_memory) + LENGTH(psram_memory);
     ASSERT(__HeapLimit - __HeapBase >= HeapMinSize, "heap region overflow")
 
 }

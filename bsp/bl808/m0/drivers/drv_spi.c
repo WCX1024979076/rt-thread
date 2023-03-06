@@ -130,7 +130,29 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
     spi = bflb_device_get_by_name(mcu_spi_config->bus_name);
     if(message->cs_take)
         bflb_gpio_reset(gpio, cs_pin);
-    bflb_spi_poll_exchange(spi, (void *)message->send_buf, (void *)message->recv_buf,  message->length);
+
+    if(message->send_buf && message->recv_buf) 
+    {
+        rt_memset(message->recv_buf, 0x0, message->length);
+        bflb_spi_poll_exchange(spi, (void *)message->send_buf, (void *)message->recv_buf,  message->length);
+        message->length += strlen(message->recv_buf); 
+    }
+    else if(message->send_buf)
+    {
+        bflb_spi_poll_send(spi, (void *)message->send_buf);
+    }
+    else if(message->recv_buf)
+    {
+        rt_memset(message->recv_buf, 0x0, message->length);
+        bflb_spi_poll_exchange(spi, (void *)message->send_buf, (void *)message->recv_buf,  message->length);
+        message->length = strlen(message->recv_buf);
+    }
+    else
+    {
+        LOG_E("both send_buf and recv_buf is null!");
+        message->length = -1;
+    }
+    
     if(message->cs_release)
         bflb_gpio_set(gpio, cs_pin);
     return message->length;
@@ -190,18 +212,18 @@ rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, 
     if(strcmp(bus_name, "spi1") == 0)
     {
         /* spi cs */
-        bflb_gpio_init(gpio, cs_pin,      GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        bflb_gpio_init(gpio, cs_pin,      GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
         /* spi miso */
-        bflb_gpio_init(gpio, GPIO_PIN_26, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        bflb_gpio_init(gpio, GPIO_PIN_30, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
         /* spi mosi */
-        bflb_gpio_init(gpio, GPIO_PIN_25, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        bflb_gpio_init(gpio, GPIO_PIN_25, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
         /* spi clk */
-        bflb_gpio_init(gpio, GPIO_PIN_19, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        bflb_gpio_init(gpio, GPIO_PIN_19, GPIO_FUNC_SPI1 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0);
     }
     else
     {
         /* spi cs */
-        bflb_gpio_init(gpio, cs_pin,     GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+        bflb_gpio_init(gpio, cs_pin,     GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
         /* spi miso */
         bflb_gpio_init(gpio, GPIO_PIN_1, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
         /* spi mosi */

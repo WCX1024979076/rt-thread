@@ -17,7 +17,7 @@ INPUT(-lgcc)
 /* configure the entry point */
 ENTRY(__start)
 
-StackSize    = 0x0400; /*  1KB */
+StackSize    = 0x1000; /*  4KB */
 HeapMinSize  = 0x1000; /*  4KB */
 
 MEMORY
@@ -168,6 +168,7 @@ SECTIONS
      * size of stack_dummy section */
     __StackTop = ORIGIN(dtcm_memory) + LENGTH(dtcm_memory);
     PROVIDE( __freertos_irq_stack_top = __StackTop);
+    PROVIDE( __rt_rvstack = __StackTop);
     __StackLimit = __StackTop - SIZEOF(.stack_dummy);
 
     /* Check if data + heap + stack exceeds RAM limit */
