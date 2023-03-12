@@ -34,6 +34,8 @@ if GetDepend('BSP_USING_LCD'):
     src += ['drv_lcd_v2.c']
     # src += ['drv_flash.c']
 
+if GetDepend('BSP_USING_PWM'):
+    src += ['drv_pwm.c']
 
 # if GetDepend('RT_USING_PWM'):
 #     src += ['drv_pwm.c']
