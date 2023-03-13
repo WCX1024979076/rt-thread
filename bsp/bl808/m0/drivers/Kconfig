@@ -128,7 +128,12 @@ menu "On-chip Peripheral Drivers"
             endif
 
         endif
-
+    
+    menuconfig BSP_USING_RTC
+        bool "Enable RTC"
+        select RT_USING_RTC
+        default n
+    
 endmenu
 
 endmenu

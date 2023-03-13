@@ -82,6 +82,7 @@
 #define RT_SERIAL_RB_BUFSZ 64
 #define RT_USING_PIN
 #define RT_USING_PWM
+#define RT_USING_RTC
 #define RT_USING_SPI
 #define RT_USING_LCD
 
@@ -247,5 +248,6 @@
 #define BSP_USING_UART0
 #define BSP_UART0_TXD_PIN 14
 #define BSP_UART0_RXD_PIN 15
+#define BSP_USING_RTC
 
 #endif

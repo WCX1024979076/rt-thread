@@ -61,12 +61,13 @@ static rt_err_t bl808_pwm_set(rt_uint8_t channel, struct rt_pwm_configuration *c
 
 static rt_err_t bl808_pwm_get(rt_uint8_t channel, struct rt_pwm_configuration *configuration)
 {
-    uint32_t reg_base, regval;
-    uint8_t  period;
+    uint32_t reg_base, regval, tmp;
+    float period;
 
     reg_base = bflb_device_get_by_name("pwm_v2_0")->reg_base;
     regval = getreg32(reg_base + PWM_MC0_PERIOD_OFFSET);
-    period = (regval & PWM_PERIOD_MASK) >> PWM_PERIOD_SHIFT;
+    tmp = (regval & PWM_PERIOD_MASK) >> PWM_PERIOD_SHIFT;
+    period = (float)tmp;
 
     uint32_t period_hz = 1000000 / period;
 
@@ -101,7 +102,7 @@ static rt_err_t bl808_pwm_control(struct rt_device_pwm *device, int cmd, void *a
         return RT_EOK;
     case PWM_CMD_DISABLE:
         bflb_pwm_v2_channel_positive_stop(pwm, channel);
-        bflb_pwm_v2_channel_negative_stop(pwm, PWM_CH3);
+        bflb_pwm_v2_channel_negative_stop(pwm, channel);
         return RT_EOK;
     case PWM_CMD_SET:
         return bl808_pwm_set(channel, configuration);
