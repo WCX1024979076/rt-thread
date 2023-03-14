@@ -14,6 +14,6 @@
 #include "bflb_clock.h"
 #include "board.h"
 #include "hardware/pwm_v2_reg.h"
-int wm_hw_pwm_init(void);
+int bl808_hw_pwm_init(void);
 
 #endif
