@@ -5,7 +5,7 @@
  *
  * Change Logs:
  * Date           Author        Notes
- * 2021-07-01     wcx1024979076 first version
+ * 2023-03-14     wcx1024979076 first version
  */
 
 #include "drv_wdt.h"
