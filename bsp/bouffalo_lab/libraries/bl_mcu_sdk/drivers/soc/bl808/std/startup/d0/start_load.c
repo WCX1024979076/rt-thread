@@ -65,6 +65,14 @@ void start_load(void)
         *pDest++ = *pSrc++;
     }
 
+    /* BF Add no cache ram data copy */
+    pSrc = &__nocache_ram_load_addr;
+    pDest = &__nocache_ram_data_start__;
+
+    for (; pDest < &__nocache_ram_data_end__;) {
+        *pDest++ = *pSrc++;
+    }
+
 #ifdef __STARTUP_CLEAR_BSS
     /*  Single BSS section scheme.
 	 *

@@ -21,6 +21,9 @@ __start:
     /* mtvt: for all vector mode IRQs */
     la      a0, __Vectors
     csrw    mtvt, a0
+<<<<<<<< HEAD:bsp/bouffalo_lab/libraries/bl_mcu_sdk/drivers/soc/bl808/std/startup/lp/start.S
+    
+========
 
 #if defined(__riscv_flen)
     /* FP: initial state */
@@ -33,6 +36,7 @@ __start:
     /* csrwi   fcsr, 0 */
 #endif
 
+>>>>>>>> 17dbcb771 (add bl_mcu_sdk & change uart, spi, gpio, lcd, pwm, rtc, wdt devices):bsp/bouffalo_lab/library/bl_mcu_sdk/drivers/soc/bl616/std/startup/start.S
     .weak __StackTop
     la      sp, __StackTop
     csrw    mscratch, sp

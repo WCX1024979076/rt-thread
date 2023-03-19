@@ -30,7 +30,7 @@
 /** @defgroup MJPEG_INTSTS mjpeg interrupt status definition
   * @{
   */
-#define MJPEG_INTSTS_ONE_FRAME     (1 << 4)
+#define MJPEG_INTSTS_ONE_FRAME (1 << 4)
 /**
   * @}
   */
@@ -38,21 +38,12 @@
 /** @defgroup MJPEG_INTCLR mjpeg interrupt clear definition
   * @{
   */
-#define MJPEG_INTCLR_ONE_FRAME     (1 << 8)
+#define MJPEG_INTCLR_ONE_FRAME (1 << 8)
 /**
   * @}
   */
 
-/** @defgroup MJPEG_CMD mjpeg feature control cmd definition
-  * @{
-  */
-#define MJPEG_CMD_SET_INPUTADDR0   0x00
-#define MJPEG_CMD_SET_INPUTADDR1   0x01
-/**
-  * @}
-  */
-
-#define MJPEG_MAX_FRAME_COUNT      4
+#define MJPEG_MAX_FRAME_COUNT 4
 
 /**
  * @brief MJPEG configuration structure
@@ -68,7 +59,6 @@
 struct bflb_mjpeg_config_s {
     uint8_t format;
     uint8_t quality;
-    uint16_t rows;
     uint16_t resolution_x;
     uint16_t resolution_y;
     uint32_t input_bufaddr0;
@@ -113,27 +103,6 @@ void bflb_mjpeg_stop(struct bflb_device_s *dev);
  */
 void bflb_mjpeg_sw_run(struct bflb_device_s *dev, uint8_t frame_count);
 
-/**
- * @brief Start mjpeg kick mode compression without camera.
- *
- * @param [in] dev device handle
- * @param [in] kick_count kick block horizontal count to compress
- */
-void bflb_mjpeg_kick_run(struct bflb_device_s *dev, uint16_t kick_count);
-
-/**
- * @brief Stop mjpeg kick mode compression without camera.
- *
- * @param [in] dev device handle
- */
-void bflb_mjpeg_kick_stop(struct bflb_device_s *dev);
-
-/**
- * @brief kick one times compression without camera.
- *
- * @param [in] dev device handle
- */
-void bflb_mjpeg_kick(struct bflb_device_s *dev);
 /**
  * @brief Enable or disable mjpeg one frame compression completion interrupt.
  *

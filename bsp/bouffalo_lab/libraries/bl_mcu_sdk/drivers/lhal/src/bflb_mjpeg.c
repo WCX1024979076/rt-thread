@@ -39,7 +39,8 @@ void bflb_mjpeg_init(struct bflb_device_s *dev, const struct bflb_mjpeg_config_s
 {
     uint32_t regval;
     uint32_t reg_base;
-    uint16_t blocks;
+    uint32_t rows;
+    uint32_t min_framesize = 0;
 
     reg_base = dev->reg_base;
 
@@ -134,29 +135,37 @@ void bflb_mjpeg_init(struct bflb_device_s *dev, const struct bflb_mjpeg_config_s
     putreg32(config->input_bufaddr0, reg_base + MJPEG_YY_FRAME_ADDR_OFFSET);
     putreg32(config->input_bufaddr1, reg_base + MJPEG_UV_FRAME_ADDR_OFFSET);
 
-    blocks = config->rows / 8;
+    rows = MJPEG_MAX_FRAME_COUNT * config->resolution_y / 8; /* with 4 frames default */
 
     switch (config->format) {
         case MJPEG_FORMAT_YUV422_YUYV:
         case MJPEG_FORMAT_YUV422_YVYU:
         case MJPEG_FORMAT_YUV422_UYVY:
         case MJPEG_FORMAT_YUV422_VYUY:
-            putreg32((0 << 16) + blocks, reg_base + MJPEG_YUV_MEM_OFFSET); /* uv << 16 + yy */
+            putreg32((0 << 16) + rows, reg_base + MJPEG_YUV_MEM_OFFSET); /* uv << 16 + yy */
+            min_framesize = config->resolution_x * config->resolution_y * 2 * MJPEG_MAX_FRAME_COUNT;
             break;
         case MJPEG_FORMAT_YUV422SP_NV16:
         case MJPEG_FORMAT_YUV422SP_NV61:
-            putreg32((blocks << 16) + blocks, reg_base + MJPEG_YUV_MEM_OFFSET);
+            putreg32((rows << 16) + rows, reg_base + MJPEG_YUV_MEM_OFFSET);
+            min_framesize = config->resolution_x * config->resolution_y * 2 * MJPEG_MAX_FRAME_COUNT;
             break;
         case MJPEG_FORMAT_YUV420SP_NV12:
         case MJPEG_FORMAT_YUV420SP_NV21:
-            putreg32((blocks << 16) + blocks, reg_base + MJPEG_YUV_MEM_OFFSET);
+            putreg32((rows << 16) + rows, reg_base + MJPEG_YUV_MEM_OFFSET);
+            min_framesize = config->resolution_x * config->resolution_y * 3 / 2 * MJPEG_MAX_FRAME_COUNT;
             break;
         case MJPEG_FORMAT_GRAY:
-            putreg32((0 << 16) + blocks, reg_base + MJPEG_YUV_MEM_OFFSET);
+            putreg32((0 << 16) + rows, reg_base + MJPEG_YUV_MEM_OFFSET);
+            min_framesize = config->resolution_x * config->resolution_y * 1 * MJPEG_MAX_FRAME_COUNT;
             break;
 
         default:
             break;
+    }
+
+    if (min_framesize > config->output_bufsize) {
+        printf("mjpeg output size is too small\r\n");
     }
 
     putreg32(config->output_bufaddr, reg_base + MJPEG_JPEG_FRAME_ADDR_OFFSET);
@@ -268,73 +277,6 @@ void bflb_mjpeg_sw_run(struct bflb_device_s *dev, uint8_t frame_count)
 
     regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
     regval &= ~MJPEG_REG_MJPEG_SW_RUN;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-}
-
-void bflb_mjpeg_kick_run(struct bflb_device_s *dev, uint16_t kick_count)
-{
-    uint32_t regval;
-    uint32_t reg_base;
-
-    reg_base = dev->reg_base;
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval |= MJPEG_REG_SW_KICK_MODE;
-    regval &= ~MJPEG_REG_SW_FRAME_MASK;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval |= MJPEG_REG_MJPEG_SW_MODE;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval &= ~MJPEG_REG_MJPEG_SW_MODE;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_YUV_MEM_SW_OFFSET);
-    regval &= ~MJPEG_REG_SW_KICK_HBLK_MASK;
-    regval |= (kick_count << MJPEG_REG_SW_KICK_HBLK_SHIFT);
-    putreg32(regval, reg_base + MJPEG_YUV_MEM_SW_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval |= MJPEG_REG_MJPEG_SW_RUN;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval &= ~MJPEG_REG_MJPEG_SW_RUN;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-}
-
-void bflb_mjpeg_kick_stop(struct bflb_device_s *dev)
-{
-    uint32_t regval;
-    uint32_t reg_base;
-
-    reg_base = dev->reg_base;
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval &= ~MJPEG_REG_SW_KICK_MODE;
-    regval &= ~MJPEG_REG_SW_FRAME_MASK;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval |= MJPEG_REG_MJPEG_SW_MODE;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval &= ~MJPEG_REG_MJPEG_SW_MODE;
-    putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-}
-
-void bflb_mjpeg_kick(struct bflb_device_s *dev)
-{
-    uint32_t regval;
-    uint32_t reg_base;
-
-    reg_base = dev->reg_base;
-
-    regval = getreg32(reg_base + MJPEG_CONTROL_2_OFFSET);
-    regval |= MJPEG_REG_SW_KICK;
     putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
 }
 
@@ -543,27 +485,4 @@ void bflb_mjpeg_set_yuv420sp_cam_input(struct bflb_device_s *dev, uint8_t yy, ui
     regval |= (yy << MJPEG_REG_YY_DVP2AXI_SEL_SHIFT);
     regval |= (uv << MJPEG_REG_UV_DVP2AXI_SEL_SHIFT);
     putreg32(regval, reg_base + MJPEG_CONTROL_2_OFFSET);
-}
-
-int bflb_mjpeg_feature_control(struct bflb_device_s *dev, int cmd, size_t arg)
-{
-    int ret = 0;
-    uint32_t reg_base;
-
-    reg_base = dev->reg_base;
-
-    switch (cmd) {
-        case MJPEG_CMD_SET_INPUTADDR0:
-            putreg32(arg, reg_base + MJPEG_YY_FRAME_ADDR_OFFSET);
-            break;
-        case MJPEG_CMD_SET_INPUTADDR1:
-            putreg32(arg, reg_base + MJPEG_UV_FRAME_ADDR_OFFSET);
-            break;
-
-        default:
-            ret = -EPERM;
-            break;
-    }
-
-    return ret;
 }

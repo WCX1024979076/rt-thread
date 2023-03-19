@@ -11,12 +11,15 @@
 
 /* Configuration ************************************************************/
 
+<<<<<<<< HEAD:bsp/bouffalo_lab/libraries/bl_mcu_sdk/drivers/soc/bl808/std/startup/lp/irq_ctx.h
+========
 #if defined(__riscv_flen)
 # define CONFIG_ARCH_FPU
 #else
 # undef CONFIG_ARCH_FPU
 #endif
 
+>>>>>>>> 17dbcb771 (add bl_mcu_sdk & change uart, spi, gpio, lcd, pwm, rtc, wdt devices):bsp/bouffalo_lab/library/bl_mcu_sdk/drivers/soc/bl616/std/startup/irq_ctx.h
 /* Processor PC */
 
 #define REG_EPC_NDX 0

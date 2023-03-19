@@ -34,8 +34,8 @@
   ******************************************************************************
   */
 #include "bl808_ef_cfg.h"
-#include "hardware/ef_data_0_reg.h"
-#include "hardware/ef_data_1_reg.h"
+#include "hardware_bl/ef_data_0_reg.h"
+#include "hardware_bl/ef_data_1_reg.h"
 
 extern int bflb_efuse_read_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t reload);
 

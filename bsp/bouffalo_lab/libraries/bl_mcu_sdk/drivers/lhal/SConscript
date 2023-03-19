@@ -1,16 +1,9 @@
-# RT-Thread building script for component
-
+import os
 from building import *
 
-cwd     = GetCurrentDir()
+cwd = GetCurrentDir()
 
-CPPPATH = [cwd + r'/include',
-        cwd + r'/include/arch',
-        cwd + r'/include/arch/risc-v/t-head',
-        cwd + r'/include/arch/risc-v/t-head/Core/Include',
-        cwd + r'/src/flash']
-
-src     = Split("""
+src = Split('''
     src/bflb_adc.c
     src/bflb_cks.c
     src/bflb_ef_ctrl.c
@@ -26,23 +19,43 @@ src     = Split("""
     src/bflb_uart.c
     src/bflb_wdg.c
     src/bflb_flash.c
-    src/flash/bflb_sf_cfg.c
     src/flash/bflb_xip_sflash.c
     src/flash/bflb_sflash.c
     src/flash/bflb_sf_ctrl.c
-    src/bflb_irq.c
-    src/bflb_l1c.c
-    src/bflb_mtimer.c
-""")
+    src/flash/bflb_sf_cfg.c
+''')
 
-if not GetDepend('BSP_USING_ROMAPI'):
-    src += ['src/bflb_common.c']
-else:
-    if not GetDepend('BSP_USING_BL60X') and not GetDepend('BSP_USING_BL70X'):
-        src += ['src/bflb_common.c']
+path = [
+    cwd + r'/include',
+    cwd + r'/include/arch',
+    cwd + r'/include/arch/risc-v/t-head',
+    cwd + r'/include/arch/risc-v/t-head/Core/Include',
+    cwd + r'/src/flash'
+]
 
-if GetDepend('BSP_USING_BL61X'):
-    src += Split("""
+if GetDepend('BSP_BL602') :
+    src += Split('''
+        src/bflb_dac.c
+        src/bflb_ir.c
+        src/bflb_pwm_v1.c
+    ''')
+elif GetDepend('BSP_BL702') :
+    src += Split('''
+        src/bflb_dac.c
+        src/bflb_emac.c
+        src/bflb_ir.c
+        src/bflb_pwm_v1.c
+        src/bflb_cam.c
+        src/bflb_spi_psram.c
+    ''')
+elif GetDepend('BSP_BL7021') :
+    src += Split('''
+        src/bflb_pwm_v1.c
+        src/bflb_pwm_v2.c
+        src/bflb_spi_psram.c
+    ''')
+elif GetDepend('BSP_BL616') :
+    src += Split('''
         src/bflb_dac.c
         src/bflb_emac.c
         src/bflb_ir.c
@@ -51,54 +64,17 @@ if GetDepend('BSP_USING_BL61X'):
         src/bflb_cam.c
         src/bflb_iso11898.c
         src/bflb_i2s.c
-        src/bflb_common.c
-        include/arch/risc-v/t-head/rv_hart.c
-        include/arch/risc-v/t-head/rv_pmp.c
-    """)
-    src += ['config/bl616/device_table.c']
-    CPPPATH += [cwd + r'/config/bl616']
-    
-elif GetDepend('BSP_USING_BL60X'):
-    src += Split("""
-        src/bflb_dac.c
-        src/bflb_ir.c
-        src/bflb_pwm_v1.c
-    """)
-    src += ['config/bl602/device_table.c']
-    CPPPATH += [cwd + r'/config/bl602']
-
-elif GetDepend('BSP_USING_BL70X'):
-    src += Split("""
-        src/bflb_dac.c
-        src/bflb_emac.c
-        src/bflb_ir.c
-        src/bflb_pwm_v1.c
-        src/bflb_cam.c
-        src/bflb_spi_psram.c
-    """)
-    src += ['config/bl702/device_table.c']
-    CPPPATH += [cwd + r'/config/bl702']
-
-elif GetDepend('BSP_USING_BL702L'):
-    src += Split("""
-        src/bflb_pwm_v1.c
-        src/bflb_pwm_v2.c
-        src/bflb_spi_psram.c
-    """)
-
-elif GetDepend('BSP_USING_BL628'):
-    src += Split("""
+    ''')
+elif GetDepend('BSP_BL628') :
+    src += Split('''
         src/bflb_dac.c
         src/bflb_emac.c
         src/bflb_clock.c
         src/bflb_pwm_v2.c
         src/bflb_iso11898.c
-        include/arch/risc-v/t-head/rv_hart.c
-        include/arch/risc-v/t-head/rv_pmp.c
-   """)
-
-elif GetDepend('BSP_USING_BL808'):
-    src += Split("""
+    ''')
+elif GetDepend('BSP_BL808') :
+    src += Split('''
         src/bflb_dac.c
         src/bflb_emac.c
         src/bflb_ir.c
@@ -108,16 +84,52 @@ elif GetDepend('BSP_USING_BL808'):
         src/bflb_iso11898.c
         src/bflb_csi.c
         src/bflb_i2s.c
+    ''')
+
+src += Split('''
+    src/bflb_irq.c
+    src/bflb_l1c.c
+    src/bflb_mtimer.c
+''')
+
+
+if GetDepend('BSP_BL602') :
+    path += [cwd + r'/config/bl602']
+    src += Split('''
+        config/bl602/device_table.c
+    ''')
+elif GetDepend('BSP_BL616') :
+    path += [cwd + r'/config/bl616']
+    src += Split('''
+        config/bl616/device_table.c
+    ''')
+elif GetDepend('BSP_BL702') :
+    path += [cwd + r'/config/bl702']
+    src += Split('''
+        config/bl702/device_table.c
+        src/bflb_usb_v1.c
+    ''')
+elif GetDepend('BSP_BL808'):
+    path += [cwd + r'/config/bl808']
+    src += Split('''
+        config/bl808/device_table.c
+    ''')
+    # src/bflb_usb_v2.c
+
+if not GetDepend('BSP_BL702') and not GetDepend('BSP_BL602') and not GetDepend('BSP_BL7021') :
+    src += Split('''
         include/arch/risc-v/t-head/rv_hart.c
         include/arch/risc-v/t-head/rv_pmp.c
-    """)
-    src += ['config/bl808/device_table.c']
-    CPPPATH += [cwd + r'/config/bl808']
-    
-LOCAL_CFLAGS = ' -DARCH_RISCV'
+    ''')
 
-group = DefineGroup('bl_lhal', src, depend = [''], CPPPATH = CPPPATH, LOCAL_CFLAGS = LOCAL_CFLAGS)
+if not GetDepend('BSP_BL602') and not GetDepend('BSP_BL702'):
+    src += Split('''
+        src/bflb_common.c
+    ''')
 
-objs = [group]
+libpath = []
+libs = []
 
-Return('objs')
+group = DefineGroup('Libraries', src, depend = [''], CPPPATH = path, LIBS = libs, LIBPATH = libpath)
+
+Return('group')

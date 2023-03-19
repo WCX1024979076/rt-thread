@@ -39,6 +39,7 @@
 #include "bflb_sf_cfg.h"
 #include "bflb_xip_sflash.h"
 #include "bl602_romdriver.h"
+#include "soft_crc.h"
 
 /** @addtogroup  BL602_Peripheral_Driver
  *  @{

@@ -86,7 +86,7 @@ __start:
     csrr a0, mhartid
     li a1, 0
     li a2, 0
-    jal entry
+    jal main
 
     csrci mstatus, (1 << 3)
 

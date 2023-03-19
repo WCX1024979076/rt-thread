@@ -129,7 +129,6 @@ void exception_entry(void)
 
     cause = (cause & 0x3ff);
 
-#ifndef CONFIG_TRAP_DUMP_DISABLE
     const char *mcause_str[] = {
         "Instruction address misaligned",
         "Instruction access fault",
@@ -150,7 +149,7 @@ void exception_entry(void)
     };
 
     printf("%s\r\n", mcause_str[cause & 0xf]);
-#endif
+
     if ((cause == 8) || (cause == 11)) {
         epc += 4;
         WRITE_CSR(CSR_MEPC, epc);

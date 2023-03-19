@@ -1,15 +1,15 @@
-# RT-Thread building script for bridge
-
+# for module compiling
 import os
 from building import *
 
-cwd = GetCurrentDir()
 objs = []
-list = os.listdir(cwd)
 
-for d in list:
-    path = os.path.join(cwd, d)
-    if os.path.isfile(os.path.join(path, 'SConscript')):
-        objs = objs + SConscript(os.path.join(d, 'SConscript'))
+cwd  = GetCurrentDir()
+
+# objs = objs + SConscript(os.path.join(cwd, 'soc', 'bl602', 'std', 'SConscript'))
+# objs = objs + SConscript(os.path.join(cwd, 'soc', 'bl616', 'std', 'SConscript'))
+# objs = objs + SConscript(os.path.join(cwd, 'soc', 'bl702', 'std', 'SConscript'))
+objs = objs + SConscript(os.path.join(cwd, 'soc', 'bl808', 'std', 'SConscript'))
+objs = objs + SConscript(os.path.join(cwd, 'lhal', 'SConscript'))
 
 Return('objs')
