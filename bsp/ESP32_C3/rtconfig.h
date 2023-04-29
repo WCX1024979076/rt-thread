@@ -29,7 +29,6 @@
 
 /* Memory Management */
 
-#define RT_PAGE_MAX_ORDER 11
 #define RT_USING_MEMPOOL
 #define RT_USING_SMALL_MEM
 #define RT_USING_SMALL_MEM_AS_HEAP
@@ -41,7 +40,7 @@
 #define RT_USING_CONSOLE
 #define RT_CONSOLEBUF_SIZE 256
 #define RT_CONSOLE_DEVICE_NAME "uart"
-#define RT_VER_NUM 0x50000
+#define RT_VER_NUM 0x50001
 
 /* RT-Thread Components */
 
@@ -62,6 +61,9 @@
 #define MSH_USING_BUILT_IN_COMMANDS
 #define FINSH_USING_DESCRIPTION
 #define FINSH_ARG_MAX 10
+
+/* DFS: device virtual file system */
+
 
 /* Device Drivers */
 
@@ -219,7 +221,7 @@
 
 /* Hardware Drivers Config */
 
-#define BSP_BOARD_LUATOS_ESP32C3
+#define BSP_BOARD_HX_EXP32C3
 
 /* Onboard Peripheral Drivers */
 
