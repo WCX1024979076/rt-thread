@@ -14,6 +14,7 @@
 #include "driver/uart.h"
 #include "hal/uart_hal.h"
 #include "sdkconfig.h"
+#include "soc/uart_periph.h"
 
 #ifdef RT_USING_SERIAL_V1
 
